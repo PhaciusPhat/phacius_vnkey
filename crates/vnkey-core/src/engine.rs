@@ -119,7 +119,7 @@ fn is_word_boundary(ch: char) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Config, InputMethod, Keystroke, TonePlacementMode};
+    use crate::types::{Config, Keystroke};
 
     fn engine() -> Engine {
         Engine::new(Config::default())
@@ -131,12 +131,6 @@ mod tests {
             all = e.process(Keystroke::char(ch));
         }
         all
-    }
-
-    fn collect_insert(actions: &[EditAction]) -> String {
-        actions.iter().filter_map(|a| {
-            if let EditAction::Insert(s) = a { Some(s.as_str()) } else { None }
-        }).collect()
     }
 
     #[test]

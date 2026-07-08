@@ -39,7 +39,7 @@ pub fn is_valid_prefix(s: &str) -> bool {
         }
     }
     // Rest must be all vowel-ish characters (nucleus/coda partial).
-    let after_onset: &str = onset.map(|_o| &rest[..]).unwrap_or(&rest);
+    let after_onset: &str = onset.map(|_o| rest).unwrap_or(rest);
     for ch in after_onset.chars() {
         if !is_vowel_char(ch) && !is_coda_char(ch) {
             return false;
@@ -84,11 +84,10 @@ const ONSETS: &[&str] = &[
 
 /// Try to consume the onset from the front of `s`.
 /// Returns (Some(onset_str), remainder) or (None, s) for zero onset.
-fn consume_onset<'a>(s: &'a str) -> (Option<&'static str>, &'a str) {
+fn consume_onset(s: &str) -> (Option<&'static str>, &str) {
     for &onset in ONSETS {
-        if s.starts_with(onset) {
+        if let Some(rest) = s.strip_prefix(onset) {
             // Make sure what follows isn't another consonant that would be part of onset.
-            let rest = &s[onset.len()..];
             return (Some(onset), rest);
         }
     }
@@ -120,8 +119,8 @@ fn is_coda_char(c: char) -> bool {
 
 fn consume_nucleus(s: &str) -> Option<(&'static str, &str)> {
     for &nuc in NUCLEI {
-        if s.starts_with(nuc) {
-            return Some((nuc, &s[nuc.len()..]));
+        if let Some(rest) = s.strip_prefix(nuc) {
+            return Some((nuc, rest));
         }
     }
     None
@@ -159,11 +158,10 @@ fn parse_syllable(s: &str) -> Option<(&'static str, &'static str, &'static str)>
 
 fn validate_combination(onset: &str, nucleus: &str, coda: &str) -> bool {
     // gh / ngh only with front vowels e, ê, i
-    if matches!(onset, "gh" | "ngh") {
-        if !matches!(nucleus, "e" | "ê" | "i" | "iê" | "ia") {
+    if matches!(onset, "gh" | "ngh")
+        && !matches!(nucleus, "e" | "ê" | "i" | "iê" | "ia") {
             return false;
         }
-    }
 
     // gi onset: nucleus must NOT start with 'i' (would be redundant "gii")
     if onset == "gi" && (nucleus == "i" || nucleus == "ia" || nucleus == "iê") {
@@ -171,11 +169,10 @@ fn validate_combination(onset: &str, nucleus: &str, coda: &str) -> bool {
     }
 
     // qu onset requires nucleus starting with u-sound
-    if onset == "qu" {
-        if !matches!(nucleus, "a" | "â" | "e" | "ê" | "i" | "o" | "ô" | "oa" | "oe" | "uy" | "u") {
+    if onset == "qu"
+        && !matches!(nucleus, "a" | "â" | "e" | "ê" | "i" | "o" | "ô" | "oa" | "oe" | "uy" | "u") {
             return false;
         }
-    }
 
     // c / k spelling constraint: 'k' only before e, ê, i; 'c' elsewhere
     // (We don't enforce spelling here — just phonotactics)
@@ -199,13 +196,12 @@ fn validate_combination(onset: &str, nucleus: &str, coda: &str) -> bool {
                 return false;
             }
         }
-        "ng" => {
+        "ng"
             // Broad compatibility — disallow only clearly invalid combos
-            if matches!(nucleus, "iê" | "iêu") && coda == "ng" {
+            if matches!(nucleus, "iê" | "iêu") && coda == "ng" => {
                 // "iêng" is not standard
                 return false;
             }
-        }
         _ => {}
     }
 

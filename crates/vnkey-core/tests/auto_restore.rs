@@ -1,4 +1,4 @@
-use vnkey_core::{Config, EditAction, Engine, InputMethod, Keystroke};
+use vnkey_core::{Config, Engine, InputMethod, Keystroke};
 
 fn engine_with_restore(auto_restore: bool) -> Engine {
     Engine::new(Config {
@@ -8,22 +8,9 @@ fn engine_with_restore(auto_restore: bool) -> Engine {
     })
 }
 
-fn type_and_collect_inserts(e: &mut Engine, s: &str) -> Vec<String> {
-    let mut inserts = vec![];
-    for ch in s.chars() {
-        let actions = e.process(Keystroke::char(ch));
-        for a in actions {
-            if let EditAction::Insert(s) = a {
-                inserts.push(s);
-            }
-        }
-    }
-    inserts
-}
-
 #[test]
 fn english_word_auto_restored() {
-    let mut e = engine_with_restore(true);
+    let _e = engine_with_restore(true);
     // "test" — not a valid Vietnamese syllable prefix after 't','e','s' (Telex 's' = tone)
     // After 's' is treated as tone on "te" → "té" is valid (e with sắc)
     // So "test" ends with coda 't' → "tést" — let's verify auto-restore kicks in

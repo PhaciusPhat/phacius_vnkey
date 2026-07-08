@@ -1,22 +1,10 @@
-use vnkey_core::{Config, EditAction, Engine, InputMethod, Keystroke, Tone, TonePlacementMode};
+use vnkey_core::{Config, Engine, InputMethod, Keystroke};
 
 fn engine() -> Engine {
     Engine::new(Config {
         method: InputMethod::Telex,
         ..Default::default()
     })
-}
-
-fn type_word(e: &mut Engine, s: &str) -> String {
-    for ch in s.chars() {
-        e.process(Keystroke::char(ch));
-    }
-    // Trigger boundary to finalize.
-    e.process(Keystroke::boundary());
-    // The buffer was just reset; return the last displayed value by re-examining
-    // what remains — but since we reset on boundary, we need to capture before reset.
-    // Instead, check displayed directly after each key.
-    String::new() // placeholder — see test approach below
 }
 
 /// Type a word character by character and return what the engine has displayed after all chars.
