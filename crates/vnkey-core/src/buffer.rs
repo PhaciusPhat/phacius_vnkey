@@ -1,0 +1,93 @@
+use crate::types::EditAction;
+
+/// Tracks what raw keystrokes have been accumulated since the last word boundary,
+/// and what string is currently displayed on-screen for the current word.
+#[derive(Debug, Default, Clone)]
+pub struct CompositionBuffer {
+    /// Raw keystrokes accumulated for the current word.
+    pub raw: String,
+    /// The string currently showing on-screen (what the shell has displayed so far).
+    pub displayed: String,
+}
+
+impl CompositionBuffer {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn push(&mut self, ch: char) {
+        self.raw.push(ch);
+    }
+
+    pub fn reset(&mut self) {
+        self.raw.clear();
+        self.displayed.clear();
+    }
+
+    /// Compute the minimal edit actions to transition from `self.displayed` to `target`.
+    /// Updates `self.displayed` to `target`.
+    pub fn diff_to(&mut self, target: &str) -> Vec<EditAction> {
+        let mut actions = Vec::new();
+
+        // Find the longest common prefix (in chars) between displayed and target.
+        let common: usize = self
+            .displayed
+            .chars()
+            .zip(target.chars())
+            .take_while(|(a, b)| a == b)
+            .count();
+
+        let displayed_chars: Vec<char> = self.displayed.chars().collect();
+        let target_tail: String = target.chars().skip(common).collect();
+
+        let to_delete = displayed_chars.len() - common;
+        if to_delete > 0 {
+            actions.push(EditAction::Backspace(to_delete as u8));
+        }
+        if !target_tail.is_empty() {
+            actions.push(EditAction::Insert(target_tail));
+        }
+
+        self.displayed = target.to_string();
+        actions
+    }
+
+    /// Produce actions to clear everything currently displayed, then reset.
+    pub fn clear_actions(&mut self) -> Vec<EditAction> {
+        let len = self.displayed.chars().count();
+        let mut actions = Vec::new();
+        if len > 0 {
+            actions.push(EditAction::Backspace(len as u8));
+        }
+        self.reset();
+        actions
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn diff_no_change() {
+        let mut buf = CompositionBuffer { raw: String::new(), displayed: "ha".into() };
+        let actions = buf.diff_to("ha");
+        assert!(actions.is_empty());
+    }
+
+    #[test]
+    fn diff_extend() {
+        // "h" → "hà": common prefix "h" (1 char), delete 0, insert "à"
+        let mut buf = CompositionBuffer { raw: String::new(), displayed: "h".into() };
+        let actions = buf.diff_to("hà");
+        assert_eq!(actions, vec![EditAction::Insert("à".into())]);
+    }
+
+    #[test]
+    fn diff_replace() {
+        // "ha" → "há": common prefix "h" (1 char), delete 1 ('a'), insert 'á'
+        let mut buf = CompositionBuffer { raw: String::new(), displayed: "ha".into() };
+        let actions = buf.diff_to("há");
+        assert_eq!(actions, vec![EditAction::Backspace(1), EditAction::Insert("á".into())]);
+    }
+}

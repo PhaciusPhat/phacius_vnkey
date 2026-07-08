@@ -1,0 +1,7 @@
+language = "C"
+include_guard = "PHACIUS_VNKEY_ENGINE_H"
+tab_width = 4
+documentation = true
+
+[export]
+prefix = "Vnkey"

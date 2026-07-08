@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  rust:
+    name: Rust — test + clippy
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --all
+      - run: cargo clippy --all-targets -- -D warnings
+
+  swift:
+    name: Swift — build + test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cbindgen
+        run: cargo install cbindgen
+      - name: Build Rust engine
+        run: bash scripts/build-engine.sh
+      - name: Swift build
+        working-directory: apps/macos
+        run: swift build
+      - name: Swift test
+        working-directory: apps/macos
+        run: swift test

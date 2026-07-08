@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "crates/vnkey-core",
+    "crates/vnkey-ffi",
+]
+resolver = "2"
