@@ -21,3 +21,6 @@ DerivedData/
 
 # Brainstorm companion
 .superpowers/
+
+# Packaged app + installer
+/dist/

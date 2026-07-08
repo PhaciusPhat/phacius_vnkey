@@ -79,9 +79,9 @@ public final class VNEngine {
                 for i in 0..<min(count, 4) {
                     let action = buf[i]
                     switch action.kind {
-                    case VnkeyActionKindBackspace:
+                    case VnkeyActionKind_Backspace:
                         actions.append(.backspace(count: action.count))
-                    case VnkeyActionKindInsert:
+                    case VnkeyActionKind_Insert:
                         let text = withUnsafePointer(to: action.text) { textPtr in
                             textPtr.withMemoryRebound(to: UInt8.self, capacity: 64) { bytes in
                                 var len = 0

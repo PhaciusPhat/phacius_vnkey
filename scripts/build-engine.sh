@@ -10,8 +10,9 @@ cargo build --release -p vnkey-ffi
 
 echo "==> Generating C header with cbindgen..."
 if ! command -v cbindgen &>/dev/null; then
-    echo "cbindgen not found — installing..."
+    echo "cbindgen not on PATH — installing / reshimming..."
     cargo install cbindgen
+    command -v asdf &>/dev/null && asdf reshim rust 2>/dev/null || true
 fi
 cbindgen "$REPO_ROOT/crates/vnkey-ffi" \
     --config "$REPO_ROOT/crates/vnkey-ffi/cbindgen.toml" \

@@ -21,7 +21,8 @@ let package = Package(
             path: "Sources/Bridge",
             linkerSettings: [
                 .linkedLibrary("vnkey_ffi"),
-                .unsafeFlags(["-L\(Context.packageDirectory)/Sources/VnkeyC"]),
+                // The static lib is copied into Sources/Bridge by build-engine.sh.
+                .unsafeFlags(["-L\(Context.packageDirectory)/Sources/Bridge"]),
             ]
         ),
 
