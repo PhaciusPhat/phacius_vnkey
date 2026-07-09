@@ -2,6 +2,11 @@ import CoreGraphics
 import Foundation
 import Bridge
 
+/// Sentinel written into `eventSourceUserData` of every event we synthesize, so
+/// the tap callback can recognize and ignore our own injected keystrokes rather
+/// than feeding them back into the engine. ("VNKEY" in ASCII.)
+let vnkeySyntheticMarker: Int64 = 0x0056_4E4B_4559
+
 /// Translates `VNEditAction`s into synthesized `CGEvent`s.
 public final class ActionExecutor {
     /// Execute the given actions. `source` is used to create synthetic events.
@@ -22,8 +27,8 @@ public final class ActionExecutor {
         for _ in 0..<count {
             let down = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: true)
             let up   = CGEvent(keyboardEventSource: source, virtualKey: 0x33, keyDown: false)
-            down?.post(tap: .cghidEventTap)
-            up?.post(tap: .cghidEventTap)
+            post(down)
+            post(up)
         }
     }
 
@@ -36,8 +41,17 @@ public final class ActionExecutor {
             utf16.append(contentsOf: String(ch).utf16)
         }
         event.keyboardSetUnicodeString(stringLength: utf16.count, unicodeString: utf16)
-        event.post(tap: .cghidEventTap)
+        post(event)
         let up = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: false)
-        up?.post(tap: .cghidEventTap)
+        post(up)
+    }
+
+    /// Tag the event as synthetic and post it, so the tap callback ignores it
+    /// instead of routing it back through the engine (which would corrupt the
+    /// composition buffer).
+    private static func post(_ event: CGEvent?) {
+        guard let event else { return }
+        event.setIntegerValueField(.eventSourceUserData, value: vnkeySyntheticMarker)
+        event.post(tap: .cghidEventTap)
     }
 }
