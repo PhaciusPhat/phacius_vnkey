@@ -75,7 +75,24 @@ public final class KeyEventListener {
     private func handleEvent(proxy: CGEventTapProxy,
                               type: CGEventType,
                               event: CGEvent) -> Unmanaged<CGEvent>? {
+        // macOS disables the tap if a callback runs too long (we synthesize
+        // several events per keystroke) or on certain user input. Re-enable it,
+        // otherwise typing silently stops working for good.
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let tap = eventTap {
+                CGEvent.tapEnable(tap: tap, enable: true)
+            }
+            return nil
+        }
+
         guard type == .keyDown else { return Unmanaged.passRetained(event) }
+
+        // Ignore events we injected ourselves — posting to `.cghidEventTap`
+        // re-delivers them to this same tap, and re-processing them would
+        // corrupt the composition buffer on every keystroke.
+        if event.getIntegerValueField(.eventSourceUserData) == vnkeySyntheticMarker {
+            return Unmanaged.passRetained(event)
+        }
 
         // Extract the character from the event.
         var length = 1
